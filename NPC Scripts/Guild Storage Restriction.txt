@@ -1,0 +1,58 @@
+
+ 
+// ALTER TABLE  `guild` ADD  `storage_restriction` INT( 11 ) NOT NULL DEFAULT  '0'
+
+prontera,155,171,5	script	Sample	757,{
+.@char_id = getcharid(0);
+.@guild_id = getcharid(2);
+
+if( !.@guild_id ){
+	mes "You dont have any guild.";
+}else{
+	query_sql( "SELECT `storage_restriction` FROM `guild` WHERE `guild_id` = '"+.@guild_id+"'",.@restriction );
+	query_sql( "SELECT `position` FROM `guild_member` WHERE `char_id` = '"+.@char_id+"'",.@position );
+
+	switch( select( "Access Guild Storage",( .@position )?"":"Edit Restriction" ) ){
+		Case 1:
+			if( .@restriction && .@restriction & ( 2 << .@position ) ){
+				mes "Your position cant access this Storage..";
+			}else{
+				mes "Storage opened.";
+				guildopenstorage();
+			}
+			break;
+		Case 2:
+			query_sql( "SELECT `position`,`name` FROM `guild_position` WHERE `guild_id` = '"+.@guild_id+"'",.@guild_position,.@guild_position_name$ );
+			do{
+				.@menu$ = "";
+				.@i = 1;
+				while( .@i < .guild_max_position ){
+					.@menu$ = .@menu$ + (( .@restriction & ( 2 << .@i) )?"^FF0000[Disabled]":"^EE55FF[Enabled]" )+" "+.@guild_position_name$[.@i] +"^000000" +":";
+					.@i++;
+				}
+				mes "Select a Position";
+				mes "^FF0000RED - Disable Access^000000";
+				.@i = select( .@menu$+":Done" );
+				if( .@i <= .guild_max_position ){
+					.@bitvalue = ( 2 << .@i );
+					if( .@restriction & .@bitvalue ){
+						.@restriction -= .@bitvalue;
+						mes "Position : ^0055FF"+.@guild_position_name$[.@i]+"^000000 granted Storage Access.";
+					}else{ 
+						mes "Position : ^0055FF"+.@guild_position_name$[.@i]+"^000000 disabled Storage Access.";
+						.@restriction += .@bitvalue;
+					}
+					next;
+				}
+			}while( select( "Continue Edit","Finished Edit" ) == 1 );
+			query_sql( "UPDATE `guild` SET `storage_restriction` = '"+.@restriction+"' WHERE `guild_id` = '"+.@guild_id+"'" );
+			mes "Guild Storage Restriction updated.";
+		default: break;
+	}
+}
+close;
+
+OnInit:
+.guild_max_position = 20;
+end;
+}

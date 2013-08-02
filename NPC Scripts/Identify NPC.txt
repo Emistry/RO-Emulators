@@ -1,0 +1,12 @@
+prontera,155,181,5	script	Sample	757,{
+if( getbrokenid(1) ) repairall;
+getinventorylist;
+while( .@i < @inventorylist_count ){
+	if ( !@inventorylist_identify[.@i] ){
+		delitem2 @inventorylist_id[.@i],1,0,0,0,0,0,0,0;
+		getitem @inventorylist_id[.@i],1;
+	}
+	.@i++;
+}
+end;
+}

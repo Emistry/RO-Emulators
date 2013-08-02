@@ -1,0 +1,389 @@
+
+-	script	IRC	-1,{
+function IRC_Create;
+function IRC_Join;
+function IRC_Broadcast;
+function IRC_Add;
+function IRC_Remove;
+function IRC_List;
+function IRC_getSlot;
+function IRC_Edit;
+
+OnInit:
+// Max IRC Room
+	.MaxRoom = 10;
+// Max Users in IRC
+	.MaxUser = 100;
+// Display Time
+	.DisplayTime = 1;
+// Kick when idle X Seconds
+	.IdleKick = 1800;
+	
+// IRC Message Colour
+	.CHAT$ = "0xFFBBFF";
+	.SYSTEM$ = "0x00EE55";
+
+// IRC Commands
+	.irc_create$ = "create";
+	.irc_join$ = "join";
+	.irc_leave$ = "leave";
+	.irc_list$ = "list";
+	.irc_kick$ = "kick";
+	.irc_invite$ = "invite";
+	.irc_help$ = "help";
+	.irc_reject$ = "reject";	
+	.irc_edit$ = "edit";	
+
+
+// IRC Messages ( will add on future )
+// .message$[0] = "IRC Room reach limit.";
+// .message$[1] = "Please leave your current IRC Room.";
+// .message$[2] = "Didnt have any available IRC Room.";
+// .message$[3] = "You didnt join any IRC Room";
+
+// Delete Data during Test Mode
+for ( .@i = 2000000; .@i < 2000003; .@i++ )
+	if ( attachrid(.@i) )
+		set @IRC, 0;
+end;
+
+
+OnWhisperGlobal:
+.@Name$ = strcharinfo(0);
+
+if( @whispervar0$ == .irc_create$ ){
+	if( getarraysize( .IRC_Room$ ) >= .MaxRoom ){
+		dispbottom "Max IRC Channel Reach."; 
+	}else if( @IRC ){
+		dispbottom "Please leave your current IRC Channel";
+	}else if( getstrlen(@whispervar1$) < 4 || getstrlen(@whispervar1$) > 24 ){
+		dispbottom "Usage : '"+.irc_create$+"'#new_irc_name#new_irc_password ( if any )";
+		dispbottom "irc_name must be between 4 ~ 24";
+	}else if( getstrlen( @whispervar2$ ) && getstrlen( @whispervar2$ ) < 4 ){
+		dispbottom "If you gonna add Password for IRC Channel, the Password must not less than 4 characters.";
+	}else{
+		@IRC = IRC_Create( @whispervar1$,@whispervar2$ );
+		if( @IRC ){
+			dispbottom "Successfully create a Channel.";
+			IRC_Add( @IRC,.@Name$ );
+			@Slot = 0;
+			setd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ),0;
+			deltimer strnpcinfo(0)+"::OnIdleCheck";
+			addtimer 1000,strnpcinfo(0)+"::OnIdleCheck";
+			
+			// Clear variable ...
+			@whispervar1$ = "";
+			@whispervar2$ = "";
+		}else{
+			dispbottom "Failed to create a Channel.";
+		}
+	}
+	
+}else if( @whispervar0$ == .irc_join$ ){
+	if( getarraysize( .IRC_Room$ ) <= 0 ){
+		dispbottom "Didnt have any available IRC Channel.";
+	}else if( @IRC ){
+		dispbottom "Please leave your current IRC Channel";
+	}else{
+		@IRC = IRC_Join();
+		IRC_Add( @IRC,.@Name$ );
+		@Slot = IRC_getSlot( @IRC,.@Name$ );
+		
+		setd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ),0;
+		deltimer strnpcinfo(0)+"::OnIdleCheck";
+		addtimer 1000,strnpcinfo(0)+"::OnIdleCheck";
+	}
+	
+}else if( @whispervar0$ == .irc_leave$ ){
+	if( !@IRC ){
+		dispbottom "You didnt join any IRC Channel.";  
+	}else{
+		@Slot = IRC_getSlot( @IRC,.@Name$ );
+		IRC_Remove( @IRC,.@Name$ );
+		setd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ),0;
+		@IRC = 0;
+		dispbottom "You have left the IRC Channel";
+		deltimer strnpcinfo(0)+"::OnIdleCheck";
+	}
+	
+}else if( @whispervar0$ == .irc_list$ ){
+	if( !@IRC ){
+		dispbottom "You didnt join any IRC Channel.";  
+	}else{
+		IRC_List( @IRC,.@Name$ );
+	}
+	
+}else if( @whispervar0$ == .irc_kick$ ){
+	if( getd( ".IRC_Room_"+( @IRC - 1 )+"$[0]" ) != .@Name$ ){
+		dispbottom "Only a MOD of a channel can use '"+.irc_kick$+"' to kick player in this Channel.";  
+	}else if( @whispervar1$ == .@Name$ ){
+		dispbottom "You cant kick yourself out of the Channel. To quit a channel use '"+.irc_leave$+"' .";
+	}else{
+		.@ExpelName$ = @whispervar1$;
+		if( attachrid( getcharid(3,.@ExpelName$) ) ){
+			@Slot = IRC_getSlot( @IRC,.@ExpelName$ );
+			IRC_Remove( @IRC,.@ExpelName$ );
+			dispbottom "You have been kicked out from the IRC by MOD";
+			
+			deltimer strnpcinfo(0)+"::OnIdleCheck";
+			setd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ),0;
+			@IRC = 0;
+		}
+		attachrid( getcharid( 3,.@Name$ ) );
+	}
+	
+}else if( @whispervar0$ == .irc_reject$ ){
+	@AutoReject = !@AutoReject;
+	dispbottom ( ( @AutoReject )?"Auto Reject":"Enable" )+" Invitation from other IRC Channel";
+	
+}else if( @whispervar0$ == .irc_edit$ ){
+	if( getd( ".IRC_Room_"+( @IRC - 1 )+"$[0]" ) != .@Name$ ){
+		dispbottom "Only a MOD of a channel can use '"+.irc_edit$+"' to update Channel Name / Password."; 
+	}else if( getstrlen(@whispervar1$) < 4 || getstrlen(@whispervar1$) > 24 ){
+		dispbottom "Usage : '"+.irc_edit$+"'#new_irc_name#new_irc_password ( if any )";
+		dispbottom "irc_name must be between 4 ~ 24";
+	}else if( getstrlen( @whispervar2$ ) && getstrlen( @whispervar2$ ) < 4 ){
+		dispbottom "If you gonna add Password for IRC Channel, the Password must not less than 4 characters.";
+	}else{
+		IRC_Edit( @IRC,@whispervar1$,@whispervar2$,.@Name$  );
+		
+		// Clear variable ...
+		@whispervar1$ = "";
+		@whispervar2$ = "";
+	}
+		
+}else if( @whispervar0$ == .irc_invite$ ){
+	if( getd( ".IRC_Room_"+( @IRC - 1 )+"$[0]" ) != .@Name$ ){
+		dispbottom "Only a MOD of a channel can use '"+.irc_invite$+"' to invite another player into this Channel.";  
+	}else if( @whispervar1$ == .@Name$ ){
+		dispbottom "You are already inside this Channel.";
+	}else{
+
+		.@Channel = @IRC;
+		.@UserName$ = @whispervar1$;
+		
+		if( attachrid( getcharid( 3,.@UserName$ ) ) )
+			if( @AutoReject || @IRC ){
+				.@i = -1;
+				if( @AutoReject ) 
+					dispbottom "Rejected IRC Invitation sent by '"+.@Name$+"'.";
+			}else{
+				.@i = @Slot = IRC_Add( .@Channel,.@UserName$ );
+				addtimer 1000,strnpcinfo(0)+"::OnIdleCheck";
+				if( @Slot >= 0 )
+					@IRC = .@Channel;
+			}
+
+		attachrid( getcharid( 3,.@Name$ ) );
+		if( .@i < 0 )
+			dispbottom "Failed to add this '"+.@UserName$+"' into this Channel.";
+	}
+	
+}else if( @IRC <= 0 || @whispervar0$ == .irc_help$  ){
+	dispbottom "======================= IRC Commands =======================";
+	dispbottom "To Create a Channel : type '"+.irc_create$+"#irc_name#irc_password' ( if any )";
+	dispbottom "To Join / View Channel : type '"+.irc_join$+"'";
+	dispbottom "To Leave Channel : type '"+.irc_leave$+"'";
+	dispbottom "To Auto Reject / Accept Invitation : type '"+.irc_reject$+"'";
+	dispbottom "To View Players / Info : type '"+.irc_list$+"'";
+	dispbottom "==================== IRC [MOD] Commands ====================";
+	dispbottom "To Invite a Player : type '"+.irc_invite$+"#player_name'";
+	dispbottom "To Kick a Player : type '"+.irc_kick$+"#player_name'";
+	dispbottom "To Edit Channel : type '"+.irc_edit$+"#new_irc_name#new_irc_password'";
+	dispbottom "======================= IRC Commands =======================";
+	
+}else{
+	@Slot = IRC_getSlot( @IRC,.@Name$ );
+	set .@MSG$, .@Name$ +" : "+ @whispervar0$;
+	IRC_Broadcast( @IRC,.@MSG$,.CHAT$,.@Name$ );
+	
+	setd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ),0;
+	deltimer strnpcinfo(0)+"::OnIdleCheck";
+	addtimer 1000,strnpcinfo(0)+"::OnIdleCheck";
+}
+close;
+
+OnIdleCheck:
+@Slot = IRC_getSlot( @IRC,strcharinfo(0) );
+setd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ),( getd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ) + 1 );
+if( getd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ) >= .IdleKick ){
+	setd( ".IRC_Idle_"+( @IRC - 1 )+"["+@Slot+"]" ),0;
+	IRC_Remove( @IRC,strcharinfo(0) );
+	@IRC = 0;
+	dispbottom "You have keen auto-kicked out from the IRC Channel due to Idled so long.";
+}else if( @IRC )
+	addtimer 1000,strnpcinfo(0)+"::OnIdleCheck";
+end;
+
+OnPCLogoutEvent:
+if( @IRC )
+	IRC_Remove( @IRC,strcharinfo(0) );
+end;
+
+// getarg(0) = IRC Channel
+// getarg(1) = Player Name
+function	IRC_Add	{
+	.@channel = getarg(0) - 1;
+	.@player$ = getarg(1);
+	
+	.@size = getarraysize( getd( ".IRC_Room_"+.@channel+"$" ) );
+	
+	while( .@i < .@size ){
+		if( getd( ".IRC_Room_"+.@channel+"$["+.@i+"]" ) == .@player$ )
+			return -1;
+		.@i++;
+	}
+
+	setd( ".IRC_Room_"+.@channel+"$["+.@size+"]" ),.@player$;
+	IRC_Broadcast( ( .@channel + 1 ),"( IRC ) : '"+.@player$+"' joined this channel.",.SYSTEM$,.@player$ );
+	
+return .@size;
+}
+
+// getarg(0) = IRC Channel
+// getarg(1) = Player Name
+function	IRC_Remove	{
+	.@channel = getarg(0) - 1;
+	.@player$ = getarg(1);
+	
+	.@Slot = IRC_getSlot( ( .@channel + 1 ),.@player$ );
+	
+	if( .@Slot >= 0 ){
+		IRC_Broadcast( ( .@channel + 1 ),"( IRC ) : '"+.@player$+"' left this channel",.SYSTEM$,.@player$ );
+		deletearray getd( ".IRC_Room_"+.@channel+"$["+.@Slot+"]" ),1;
+	}
+
+	// Delete Channel & Password from Channel Lists if empty users
+	if( getarraysize( getd( ".IRC_Room_"+.@channel+"$" ) ) <= 0 ){
+		.IRC_Room$[ .@channel ] = "";
+		.IRC_Pass$[ .@channel ] = "";
+	}
+		
+return attachrid( getcharid(3,.@player$ ) );
+}
+
+// getarg(0) = IRC Channel
+function	IRC_List	{
+	.@channel = getarg(0) - 1;
+
+	dispbottom "========= IRC INFORMATION ==========";
+	dispbottom "IRC Title : "+.IRC_Room$[ .@channel ];
+	dispbottom "IRC Type : "+( ( getstrlen( .IRC_Pass$[ .@channel ] ) )?"Secured ( '"+.IRC_Pass$[ .@channel ]+"' )":"Public" );
+	dispbottom "========= IRC USER LIST ===========";
+
+	.@size = getarraysize( getd( ".IRC_Room_"+.@channel+"$" ) );
+	
+	while( .@i < .@size ){
+		dispbottom "   ->   "+getd( ".IRC_Room_"+.@channel+"$["+.@i+"]" )+"    Idled : "+getd( ".IRC_Idle_"+.@channel+"["+.@i+"]" )+" seconds"+ ( ( .@i == 0 )?"   [ MOD ]":"" );
+		.@i++;
+	}
+	dispbottom "========= IRC USER LIST ===========";
+	dispbottom "Total User : "+.@size;
+	
+return;
+}
+
+// getarg(0) = IRC Channel
+// getarg(1) = Message
+// getarg(2) = Color
+// getarg(3) = Attach Target Player
+function	IRC_Broadcast	{
+	.@channel = getarg(0) - 1;
+	.@message$ = getarg(1);
+	.@colour$ = getarg(2);
+	.@player$ = getarg(3);
+
+	.@size = getarraysize( getd( ".IRC_Room_"+.@channel+"$" ) );
+	
+	while( .@i < .@size ){
+		if( attachrid( getcharid( 3,getd( ".IRC_Room_"+.@channel+"$["+.@i+"]" ) ) ) )
+			announce ( ( .DisplayTime )?"[ "+gettimestr("%H:%M",7)+" ] ":"" ) + .@message$,bc_self,.@colour$;
+		.@i++;
+	}
+	
+return attachrid( getcharid( 3,.@player$ ) );
+}
+
+// getarg(0) = Room Title
+// getarg(1) = Room Password if any
+function	IRC_Create	{
+	.@irc_name$ = getarg(0);
+	.@irc_password$ = getarg(1);
+	
+	while( .@i < .MaxRoom ){
+		if( .IRC_Room$[.@i] == "" ){
+			.IRC_Room$[.@i] = .@irc_name$;
+			.IRC_Pass$[.@i] = .@irc_password$;
+			return ( .@i + 1 );
+		}
+		.@i++;
+	}
+	
+return 0;
+}
+
+// List Channel and Select
+function	IRC_Join	{
+	.@room_size = getarraysize( .IRC_Room$ );
+	
+	while( .@i < .@room_size ){
+		set .@Menu$,.@Menu$ + ( ( .IRC_Room$[.@i] == "" )?"":"^FF0000[ "+( ( getstrlen( .IRC_Pass$[.@i] ) >= 4 )?"S":"P" )+" ] ^0055FF"+.IRC_Room$[.@i]+" ^FF0000( "+getarraysize( getd( ".IRC_Room_"+.@i+"$") )+" / "+.MaxUser+" Users )^000000" ) +":";
+		.@i++;
+	}
+	
+	 do{
+		mes "^0055FF[ S ]^000000 = ^777777Secured Room^000000";
+		mes "^0055FF[ P ]^000000 = ^777777Public Room^000000";
+		.@Room = select( .@Menu$ ) - 1;
+		if( getstrlen( .IRC_Pass$[ .@Room ] ) >= 4 ){
+			mes "Please enter the IRC Password.";
+			input .@Pass$;
+			if( .@Pass$ != .IRC_Pass$[ .@Room ] ){
+				mes "^FF0000Invalid Password^000000";
+				next;
+			}
+		}
+	 }while( getstrlen( .IRC_Pass$[ .@Room ] ) >= 4 && .@Pass$ != .IRC_Pass$[ .@Room ] );
+	 
+return ( .@Room + 1 );
+}
+
+// getarg(0) = IRC Channel
+// getarg(1) = Player Name
+function	IRC_getSlot	{
+	.@channel = getarg(0) - 1;
+	.@player$ = getarg(1);
+	
+	.@size = getarraysize( getd( ".IRC_Room_"+.@channel+"$" ) );
+
+	while( .@i < .@size ){
+		if( getd( ".IRC_Room_"+.@channel+"$["+.@i+"]" ) == .@player$ )
+			return .@i;
+		.@i++;
+	}
+	
+return -1;
+}
+
+// getarg(0) = IRC Channel
+// getarg(1) = New IRC Name
+// getarg(2) = New IRC Password ( if any )
+// getarg(3) = Player Name
+function	IRC_Edit	{
+	.@channel = getarg(0) - 1;
+	.@irc_name$ = getarg(1);
+	.@irc_password$ = getarg(2);
+	.@player$ = getarg(3);
+
+	.IRC_Room$[.@channel] = .@irc_name$;
+	.IRC_Pass$[.@channel] = .@irc_password$;
+	IRC_Broadcast( ( .@channel + 1 ),"( IRC ) : [MOD] '"+.@player$+"' has updated Channel Name / Password.",.SYSTEM$,.@player$ );
+	
+return;
+}
+
+}
+
+
+
+

@@ -1,0 +1,26 @@
+/* 
+
+CREATE TABLE IF NOT EXISTS `E-MVPRank` (
+	`char_id` int(11) unsigned NOT NULL default '0',
+	`name` varchar(30) NOT NULL DEFAULT '',
+	`Count` int(11) unsigned NOT NULL default '0',
+	PRIMARY KEY  (`char_id`)
+) ENGINE=MyISAM;
+*/
+
+
+fayon,90,115,5	script	Sample	757,{
+query_sql( "SELECT `name`,`Count` FROM `E-MVPRank` ORDER BY `Count` DESC LIMIT 5",.@Name$,.@Count );
+if( getarraysize( .@Name$ ) ){
+	for( set .@i,0; .@i < getarraysize( .@Name$ ); set .@i,.@i + 1 )
+		mes "[ "+( .@i + 1 )+". ] "+.@Name$[.@i]+" - "+.@Count[.@i]+" Points";
+}else{
+	mes "No Record Found.";
+}
+close;
+
+OnNPCKillEvent:
+if( getmonsterinfo( killedrid,MOB_MVPEXP ) )
+	query_sql( "INSERT INTO `E-MVPRank` SET `char_id`='"+getcharid(0)+"',`name`='"+strcharinfo(0)+"',`Count`='1' ON DUPLICATE KEY UPDATE `Count`=`Count`+1" );
+end;
+}

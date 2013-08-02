@@ -1,0 +1,41 @@
+
+
+prontera,111,181,5	script	Roulette	757,{
+mes "You want to play ^FF0000Rock,Paper,Scissor^000000 Game with me ?";
+mes "You can gain some surprising Reward if you beat me ^FF0000"+.Win+" out of "+.Round+"^000000 game";
+if( select("YES:NO") == 1 ){
+	for( set .@r,0; .@r < .Round; set .@r,.@r + 1 ){
+		next;
+		mes "Round : ^FF0000"+( .@r + 1 )+" / "+.Round+"^000000";
+		set .@Choice,select(" ~ ROCK: ~ PAPER: ~ SCISSOR");
+		if( .@Choice == rand(1,3) ){
+			mes "You WIN !!";
+			set .@Win,.@Win + 1;
+		}else{
+			mes "You LOSE !!";
+		}
+	}
+	mes "Your Total Win : ^FF0000"+.@Win+" out of "+.Round+"^000000 game";
+	if( .@Win >= .Win ){
+		set .@RPS,rand( .item_size );
+		getitem .Item[.@RPS],.Count[.@RPS];
+	}
+}
+close;
+
+OnInit:
+// Required Winning Rounds
+set .Win,8;
+// Maximum Game Round
+set .Round,10;
+
+// Rewards + Amounts
+setarray .Item,501,502,503,504,505,506,507;
+setarray .Count,1,2,3,4,5,6,7;
+set .item_size,getarraysize(.Item);
+end;
+}
+
+
+
+

@@ -1,0 +1,43 @@
+
+prontera,155,181,5	script	Sample	757,{
+mes "Which map you want to rent.";
+.@i = select( .menu$ ) - 1;
+if( !getcharid(2) ){
+	mes "You need a guild.";
+}else if( $rent_expire[.@i] < gettimetick(2) ){
+	mes "You have rent this map.";
+	// mapwarp .map$[.@i],"prontera",155,181;
+	$rent_expire[.@i] = gettimetick(2) + ( .rent_duration * 86400 );
+	$guild_id[.@i] = getcharid(2);
+	if( select( "Warp to Map","Close" ) == 1 )
+		warp .map$[.@i],0,0;
+}else{
+	mes "This Map has been rent by "+getguildname( $guild_id[.@i] );
+}
+close;
+
+OnInit:
+// map list
+setarray .map$,"izlude","payon","alberta";
+.map_size = getarraysize( .map$ );
+// how many day
+.rent_duration = 31;
+
+for( .@i = 0; .@i < .map_size; .@i++ ){
+	set .menu$,.menu$ + .map$[.@i] +":";
+	setmapflag .map$[.@i],mf_loadevent;
+}
+end;
+
+OnPCLoadMapEvent:
+.@map$ = strcharinfo(3);
+.@guild_id = getcharid(2);
+for( .@i = 0; .@i < .map_size; .@i++ )
+	if( .map$[.@i] == .@map$ && $guild_id[.@i] && $guild_id[.@i] != .@guild_id ){
+		mes "You cant enter this map.";
+		mes "This map reserved for "+getguildname( $guild_id[.@i] );
+		close2;
+		warp "SavePoint",0,0;
+	}
+end;
+}

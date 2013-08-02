@@ -1,0 +1,27 @@
+
+-	script	Sample	-1,{
+OnWhisperGlobal:
+.@i = query_logsql("SELECT `char_name` FROM `atcommandlog` WHERE `char_name` LIKE '"+@whispervar0$+"' LIMIT 127",.@charname$ );
+if( !.@i ){
+	mes "No Record found for player named ^FF0000"+@whispervar0$+"^000000.";
+}else{
+	if( select( "Search Command","List All" ) == 1 ){
+		mes "Input the @Command.";
+		input .@search$;
+	}
+	.@i = query_logsql("SELECT `atcommand_date`,`map`,`command` FROM `atcommandlog` WHERE `char_name` LIKE '"+@whispervar0$+"' "+( ( .@search$ == "" )?"":" AND `command` LIKE '%"+.@search$+"%'" )+" ORDER BY `atcommand_date` DESC LIMIT 127",.@date$,.@map$,.@command$ );
+	if( !.@i ){
+		mes "No Record found";
+	}else{
+		next;
+		mes "Player : ^0055FF"+@whispervar0$+"^000000";
+		if( .@search$ != "" ) mes "Command : ^0055FF"+.@search$+"^000000";
+		.@size = getarraysize( .@date$ );
+		for( .@i = 0; .@i < .@size; .@i++ ){
+			mes "^FF0000["+.@date$[.@i]+"] ^0055FF"+.@map$[.@i]+"^000000";
+			mes " > "+.@command$[.@i];
+		}
+	}
+}
+close;
+}

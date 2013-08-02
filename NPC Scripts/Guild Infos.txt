@@ -1,0 +1,37 @@
+
+
+prontera,155,181,5	script	Sample	757,{
+mes "Enter the guild name";
+input .@search_name$;
+.@count = query_sql("SELECT `guild_id`,`name`,`master` FROM `guild` WHERE `name` LIKE '%"+.@search_name$+"%' LIMIT 50", .@gid,.@guild_name$,.@master_name$ );
+if( !.@count ){
+	mes "No guild found with ^FF0000"+.@search_name$+"^000000.";
+}else{
+	if( .@count > 1 ){
+		mes "Found "+.@count+" guild that match your search..please select a guild.";
+		.@i = select( implode( .@guild_name$,":" ) ) - 1;
+		next;
+		.@gid = .@gid[ .@i ];
+		.@guild_name$ = .@guild_name$[ .@i ];
+		.@master_name$ = .@master_name$[ .@i ];
+	}
+	mes "Guild : ";
+	mes "^FF0000"+.@guild_name$+"^000000";
+	query_sql( "SELECT COUNT(`castle_id`) FROM `guild_castle` WHERE `guild_id`='"+.@gid+"'",.@count ); 
+	mes "Castle(s) : "+(( .@count )? "^FF0000"+.@count+" Castles":"^777777None" )+"^000000";
+	mes " ";
+	mes "MASTER :";
+	mes " > ^FF0000"+.@master_name$+"^000000";
+	mes " ";
+	mes "MEMBER :";
+	query_sql( "SELECT COUNT(`name`),`name` FROM `guild_member` WHERE `guild_id` = '"+.@gid+"' LIMIT 100",.@count,.@guild_member$ );
+	if( .@count > 1 ){
+		for( .@i = 0; .@i < .@count; .@i++ )
+			if( .@guild_member$[.@i] != .@master_name$ )
+				mes " > FF0000"+.@guild_member$[.@i]+"^000000";
+	}else{
+		mes "None..";
+	}
+}
+close;
+}

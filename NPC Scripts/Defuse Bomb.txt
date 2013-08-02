@@ -1,0 +1,177 @@
+
+prontera,155,171,5	script	Defuse Bomb	115,{
+if( .status == 2 ){
+	mes "Sorry, event already started.";
+}else if( .status == 1 ){
+	.aid[ .aid_count ] = getcharid(3);
+	.aid_count++;
+	@target_wire = @wire_count = 0;
+	
+	deltimer strnpcinfo(0)+"::OnTimeUp";
+	warp .map$,atoi( .map$[1] ),atoi( .map$[2] );
+}else{
+	mes "No Event now.";
+}
+close;
+
+OnInit:
+// Destnation
+setarray .map$[0],"quiz_02","335","345";
+
+// Wires Name + Location
+setarray .wire_name$[0],"RED","GREEN","BLUE","YELLOW","BLACK","WHITE","GOLD","BROWN";
+setarray .x[0],329,332,339,342,342,339,332,329;
+setarray .y[0],348,352,352,349,343,339,339,342;
+.wire_size = getarraysize( .wire_name$ );
+.xy_size = getarraysize( .x );
+
+// Game Rules
+setarray .rules$[0],
+	"A Bomb is hidden in this area",
+	"You must defuse it within a time given.",
+	"To defuse the bomb, you must cut all the wires.",
+	"I will tell you which wires to cut from time to time, so please pay attention.",
+	"If you made any mistakes, the bomb will explode.",
+	"Only cut the wires that I mentioned.",
+	"Get Ready, Event Start Now.";
+.rules_size = getarraysize( .rules$ );
+
+// Time / Wire Range Settings
+setarray .wires[0],25,50;
+setarray .times[0],45,90;
+
+// max game duration
+.game_minute = 10;
+end;
+
+// Event start
+OnMinute30:
+OnEventStart:
+	.status = 1;
+	for( .@i = 3; .@i > 0; .@i-- ){
+		announce "Defuse Bomb Game registration opened for next "+.@i+" minutes.",0;
+		sleep ( 60 * 1000 );
+	}
+
+	// got participants
+	if( .aid_count ){
+		.status = 2;
+		
+		for( .@i = 0; .@i < .rules_size; .@i++ ){
+			mapannounce .map$,.rules$[.@i],bc_blue;
+			sleep 2500;
+		}
+		
+		copyarray .@wire_name$[0],.wire_name$[0],.xy_size;
+		.@wire_size = .wire_size;
+		copyarray .@bomb_x[0],.x[0],.xy_size;
+		copyarray .@bomb_y[0],.y[0],.xy_size;
+		.@xy_size = .xy_size;
+		for( .@i = 0; .@i < .xy_size; .@i++ ){
+			.@wire_random = rand( .@xy_size );
+			.@xy_random = rand( .@xy_size );
+			movenpc .@wire_name$[ .@wire_random ],.@bomb_x[ .@xy_random ],.@bomb_y[ .@xy_random ];
+			
+			deletearray .@wire_name$[ .@wire_random ],1;
+			deletearray .@bomb_x[ .@xy_random ],1;
+			deletearray .@bomb_y[ .@xy_random ],1;
+			.@xy_size--;
+		}
+
+		mapannounce .map$,"Event Start Now...Defuse the BOMB !!",bc_blue;
+		sleep 2500;
+
+		for( .@i = 0; .@i < .aid_count; .@i++ )
+			if( attachrid( .aid[ .@i ] ) ){
+				.@time = rand( .times[0],.times[1] );
+				@wire_count = rand( .wires[0],.wires[1] );
+				addtimer ( .@time * 1000 ),strnpcinfo(0)+"::OnTimeUp";
+				callsub OnAssign_Wire,.wire_size;
+				dispbottom "You got "+.@time+" seconds for defuse "+@wire_count+" wires.";
+			}
+
+		sleep ( .game_minute * 60000 );
+	}
+	
+OnEventEnd:
+	mapannounce .map$,"Event Ended.",0;
+	sleep 2500;
+	// clear data
+	.status = 0;
+	.aid_count = 0;
+	deletearray .aid;
+	mapwarp .map$,"prontera",155,175;
+	end;
+	
+OnAssign_Wire:
+	@target_wire = rand( 1,getarg(0) );
+	message strcharinfo(0),"NEXT :  :: "+.wire_name$[ @target_wire - 1 ]+" Wire ::  | "+@wire_count+" left";
+	return;
+
+OnWire1: callsub OnCheck,1; end;
+OnWire2: callsub OnCheck,2; end;
+OnWire3: callsub OnCheck,3; end;
+OnWire4: callsub OnCheck,4; end;
+OnWire5: callsub OnCheck,5; end;
+OnWire6: callsub OnCheck,6; end;
+OnWire7: callsub OnCheck,7; end;
+OnWire8: callsub OnCheck,8; end;
+
+OnCheck:
+	if( .status == 2 ){
+		.@getarg[0] = getarg(0);
+		
+		// clicked on correct wires.
+		if( .@getarg[0] == @target_wire ){
+			@wire_count--;
+			callsub OnAssign_Wire,.wire_size;
+			specialeffect2 610;
+			
+		// failed / clicked wrong wires
+		}else{
+			message strcharinfo(0),"You FAILED";
+			deltimer strnpcinfo(0)+"::OnTimeUp";
+			unitkill getcharid(3);
+			specialeffect2 183;
+			
+			// warp out...
+			sleep2 2500;
+			warp "prontera",155,181;
+		}
+		
+		// defused all ...
+		if( !@wire_count ){
+			announce "You success to defuse the BOMB !!",bc_self;
+			deltimer strnpcinfo(0)+"::OnTimeUp";
+			
+			// rewards....
+			getitem 512,100;
+			getitem 512,100;
+			
+			// warp out...
+			sleep2 2500;
+			warp "prontera",155,181;
+		}
+	}
+	return;
+	
+OnTimeUp:
+	announce "TIME's UP !!!",0;
+	sleep2 2500;
+	warp "prontera",155,181;
+	end;
+}
+
+
+// Wire NPCs ( Must Match above .wire_name$ Array )
+quiz_02,1,1,4	script	RED	723,{ doevent "Defuse Bomb::OnWire1"; }
+quiz_02,1,1,4	script	GREEN	723,{ doevent "Defuse Bomb::OnWire2"; }
+quiz_02,1,1,4	script	BLUE	723,{ doevent "Defuse Bomb::OnWire3"; }
+quiz_02,1,1,4	script	YELLOW	723,{ doevent "Defuse Bomb::OnWire4"; }
+quiz_02,1,1,4	script	BLACK	723,{ doevent "Defuse Bomb::OnWire5"; }
+quiz_02,1,1,4	script	WHITE	723,{ doevent "Defuse Bomb::OnWire6"; }
+quiz_02,1,1,4	script	GOLD	723,{ doevent "Defuse Bomb::OnWire7"; }
+quiz_02,1,1,4	script	BROWN	723,{ doevent "Defuse Bomb::OnWire8"; }
+
+	
+	

@@ -1,0 +1,41 @@
+
+prontera,155,171,5	script	Sample	757,{
+mes "Enter player name ?";
+mes "^FF0000 Min. 4 words.^000000";
+do{
+	input .@search$;
+}while( getstrlen( .@search$ ) < 4 );
+
+if( query_sql( "SELECT `account_id`,`name` FROM `char` WHERE `name` LIKE '%"+escape_sql( .@search$ )+"%' GROUP BY `account_id` LIMIT 50",.@id,.@name$ ) ){
+	.@size = getarraysize( .@id );
+	if( .@size > 1 ){
+		mes "^777777==========================^000000";
+		mes "Found ^FF0000"+.@size+" Accounts^000000 where it's character's name consist of ";
+		mes "\"^FF0000"+.@search$+"^000000 \""; 
+		.@i = select( implode( .@name$,":" ) ) - 1;
+	}
+	next;
+	if( query_sql( "SELECT * FROM `login` WHERE `account_id`='"+.@id[.@i]+"'",.@id,.@user_id$,.@user_pass$,.@sex$,.@email$,.@group_id,.@state,.@unban_time,.@expiration_time,.@login_count,.@last_login$,.@last_ip$,.@birth_date$ ) ){
+		mes "^777777AID : ^FF0000"+.@id+"^000000";
+		mes "^777777User ID : ^FF0000"+.@user_id$+"^000000";
+		mes "^777777Password : ^FF0000"+.@user_pass$+"^000000";
+		mes "^777777Gender : ^FF0000"+.@sex$+"^000000";
+		mes "^777777Email : ^FF0000"+.@email$+"^000000";
+		mes "^777777Group ID : ^FF0000"+.@group_id+"^000000";
+		mes "^777777State : ^FF0000"+.@state+"^000000";
+		if( .@unban_time ) mes "^777777UnBan Time : ^FF0000"+.@unban_time+"^000000";
+		if( .@expiration_time ) mes "^777777Expire Time : ^FF0000"+.@expiration_time+"^000000";
+		mes "^777777Login Count : ^FF0000"+.@login_count+"^000000";
+		mes "^777777Last Login : ^FF0000"+.@last_login$+"^000000";
+		mes "^777777Last IP : ^FF0000"+.@last_ip$+"^000000";
+		mes "^777777Birthdate : ^FF0000"+.@birth_date$+"^000000";
+	
+	}else{
+		mes "No Records found for this account..";
+	}
+	
+}else{
+	mes "No players found with this name.";
+}
+close;
+}

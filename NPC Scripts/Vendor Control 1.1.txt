@@ -1,0 +1,121 @@
+
+prontera,156,188,4	script	Vending Helper	757,{
+for( set .@i,1; .@i <= .count; set .@i,.@i + 1 ){
+	getmapxy( .@map$,.@x,.@y,1,"#vend_slot"+.@i );
+	if( !getareausers( .map$,.@x,.@y,.@x,.@y ) && .@x > 1 && .@y > 1 ){
+		set .@available,.@available + 1;
+		set .@menu$,.@menu$ + "Slot - "+.@i+":";
+	}else{
+		set .@menu$,.@menu$ + ":";
+	}
+}
+
+if( !.@available ){
+	mes "Dont have any available slot.";
+}else if( !getskilllv("MC_VENDING") ){
+	mes "You dont have ^0055FFVending Skill^000000.";
+}else{
+	mes "Available Slot : "+.@available;
+	mes "Please select a slot to vending.";
+	set .@i,select( .@menu$ );
+	getmapxy( .@map$,.@x,.@y,1,"#vend_slot"+.@i );
+	if( .@x == 1 || .@y == 1 ){
+		mes "This NPC at invalid location...";
+	}else{
+		warp .@map$,.@x,.@y;
+		hideonnpc "#vend_slot"+.@i;
+	}
+}
+close;
+
+OnInit:
+sleep 1000;
+// Map for vending
+set .map$,"prontera";
+setcell .map$,0,0,284,365,cell_novending,1;
+
+// x and y horizone ..
+setarray .x_line,149,154,159;
+setarray .y_line,173,169,165,161,157;
+
+set .x_line_size,getarraysize( .x_line );
+set .y_line_size,getarraysize( .y_line );
+set .count,1;
+for( set .@x,0; .@x < .x_line_size; set .@x,.@x + 1 )
+	for( set .@y,0; .@y < .y_line_size; set .@y,.@y + 1 )
+		if( checkcell( .map$,.x_line[.@x],.y_line[.@y],cell_chkpass ) ){
+			movenpc "#vend_slot"+.count,.x_line[.@x],.y_line[.@y];
+			setcell .map$,.x_line[.@x],.y_line[.@y],.x_lin[.@x],.y_line[.@y],cell_novending,0;
+			set .count,.count + 1;
+		}
+npctalk "Vending Spot : "+.count;
+donpcevent "::OnSetup";
+end;
+}
+
+-	script	vend_slot	-1,{
+getmapxy( .@map$,.@x,.@y,1 );
+if( !getskilllv("MC_VENDING") ){
+	mes "You dont have ^0055FFVending Skill^000000.";
+}else if( getareausers( .@map$,.@x,.@y,.@x,.@y ) ){
+	mes "Someone already selected this spot.";
+}else{
+	mes "Spot : ^777777Available^000000";
+	mes "^0055FF[ Vending Area Rules ]^000000";
+	mes "^FF0000 ~ Use proper Shop Name.^000000";
+	mes "^FF0000 ~ Never sell Junk/Gifts.^000000";
+	mes " ";
+	mes "^777777Player will failed to follow these will be punished.^000000";
+	if( select( "Select this Spot","Cancel" ) == 1 ){
+		warp .@map$,.@x,.@y;
+		hideonnpc strnpcinfo(0);
+	}
+}
+close;
+
+OnSetup:
+getmapxy( .@map$,.@x,.@y,1 );
+set .@npcname$,strnpcinfo(0);
+while( .@map$ != "" ){
+	if( getareausers( .@map$,.@x,.@y,.@x,.@y ) ){
+		hideonnpc .@npcname$;
+	}else{
+		hideoffnpc .@npcname$;
+		// specialeffect 313;
+	}
+	sleep 5000;
+}
+end;
+}
+
+// Add more if needed.
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot1	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot2	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot3	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot4	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot5	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot6	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot7	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot8	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot9	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot10	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot11	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot12	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot13	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot14	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot15	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot16	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot17	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot18	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot19	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot20	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot21	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot22	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot23	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot24	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot25	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot26	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot27	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot28	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot29	858
+prontera,1,1,4	duplicate(vend_slot)	#vend_slot30	858

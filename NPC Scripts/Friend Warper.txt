@@ -1,0 +1,22 @@
+
+
+prontera,155,161,4	script	Sample	757,{
+	query_sql( "SELECT `char_id`,`account_id`,`name` FROM `char` WHERE `char_id` IN ( SELECT `friend_id` FROM `friends` WHERE `char_id`='"+getcharid(0)+"' )",.@char_id,.@account_id,.@name$ );
+	.@total = getarraysize( .@char_id );
+	if( .@total ){
+		for( .@i = 0; .@i < .@total; .@i++ )
+			.@menu$ = .@menu$ + ( ( isloggedin( .@account_id[.@i],.@char_id[.@i] ) )?"^0055FF[ ONLINE ]":"^FF0000[ OFFLINE ]" )+" "+.@name$[.@i] +"^000000:";
+		
+		.@i = select( implode( .@menu$,":" ) ) - 1;
+		if( isloggedin( .@account_id[.@i],.@char_id[.@i] ) ){
+			getmapxy( .@map$,.@x,.@y,0,.@name$[.@i] );
+			warp .@map$,.@x,.@y;
+		}else{
+			mes "Your friends is not online.";
+		}
+	
+	}else{
+		mes "You dont have any friends.";
+	}
+	close;
+}

@@ -1,0 +1,71 @@
+-	script	Monster Invasion	-1,{
+function Invasion;
+
+OnInit:
+setarray .Maps$[0],"alberta","aldebaran","amatsu","ayothaya","comodo","einbroch","geffen","gonryun","hugel","jawaii","lighthalzen","louyang","morocc","moscovia","niflheim","payon","rachel","veins","umbala","xmas","yuno";
+set .map_size,getarraysize( .Maps$ );
+end;
+
+OnWhisperGlobal:
+if( getgmlevel() < 90 ) end;
+OnMinute00:
+if( .Invasion ) end;
+set .Invasion,1;
+set .SelectedMap$,.Maps$[ rand( .map_size ) ];
+switch( rand(4) ){
+	default: end;
+	// MAX : ~64 Different Monster in each Cases( 1 BOSS + 63 Normal )
+	// Case <X>: Invasion( <BOSS>,<Amount>,<MOBID>,<AMOUNT>,....,<MOBID>,<AMOUNT> ); break;
+	Case 0: Invasion( 1511,1,1002,10 ); break;
+	Case 1: Invasion( 1511,1,1002,10,1002,15 ); break;
+	Case 2: Invasion( 1511,1,1002,5,1002,25,1002,17 ); break;
+	Case 3: Invasion( 1511,1,1002,5,1002,25,1002,10,1002,30 ); break;
+}
+initnpctimer;
+end;
+
+OnTimer1800000:
+set .Invasion,0;
+announce "OMG...Monsters has destroyed the city..all of you failed...",0;
+killmonster .SelectedMap$,"All";
+mapwarp .SelectedMap$,"prontera",155,181;
+end;
+
+function	Invasion	{
+	set .boss_id,getarg(0);
+	set .boss_amount,getarg(1);
+	// monster .SelectedMap$,0,0,"INVASION BOSS",getarg(0),getarg(1),strnpcinfo(0)+"::OnBossKilled";
+	for( set .@i,2; getarg( .@i,0 ); set .@i,.@i + 2 )
+		monster .SelectedMap$,0,0,"INVASION MOB",getarg(.@i),getarg(.@i+1),strnpcinfo(0)+"::OnMobKilled";
+	announce "Invasion STARTED at "+.SelectedMap$+" .. Hurry Up !!...You have 30 minutes to save the city.",0;
+	return;
+}
+
+OnBossKilled:
+// getitem 512,100;
+set .@mobcount,mobcount( .SelectedMap$,strnpcinfo(0)+"::OnBossKilled" );
+if( .@mobcount ){
+	mapannounce .SelectedMap$,"INVASION BOSS - Remain : "+.@mobcount,0;
+}else{
+	killmonster .SelectedMap$,"All";
+	mapannounce .SelectedMap$,"ALL Boss has been Killed, thx for saving the citys....",0;
+	
+	announce "Invasion Event end Successfully.",0;
+	mapwarp .SelectedMap$,"prontera",155,181;
+	set .Invasion,0;
+	stopnpctimer;
+}
+end;
+
+OnMobKilled:
+// getitem 512,1;
+set .@mobcount,mobcount( .SelectedMap$,strnpcinfo(0)+"::OnMobKilled" );
+if( .@mobcount ){
+	mapannounce .SelectedMap$,"Monsters Remain : "+.@mobcount,0;
+}else{
+	announce "Invasion BOSS has been spotted at "+.SelectedMap$+" .. Hurry Up !!.",0;
+	monster .SelectedMap$,0,0,"INVASION BOSS",.boss_id,.boss_amount,strnpcinfo(0)+"::OnBossKilled";
+}
+end;
+
+}
