@@ -1,0 +1,45 @@
+
+prontera,155,181,5  script	Sample#disguise	757,{
+.@eac = eaclass();
+.@basemask = ( .@eac & EAJ_BASEMASK );
+
+setarray .@joblist,
+	.@basemask,
+	.@basemask|EAJL_BABY,
+	.@basemask|EAJL_2_1,
+	.@basemask|EAJL_2_2,
+	.@basemask|EAJL_UPPER,
+	.@basemask|EAJL_2_1|EAJL_UPPER,
+	.@basemask|EAJL_2_2|EAJL_UPPER,
+	.@basemask|EAJL_2_1|EAJL_THIRD,
+	.@basemask|EAJL_2_2|EAJL_THIRD;
+.@joblist_size = getarraysize( .@joblist );
+
+for( .@i = 0; .@i < .@joblist_size; .@i++ ){
+	.@roclass = roclass( .@joblist[.@i] );
+	if( .@roclass != -1 && .@roclass != @disguised ){
+		set .@menu$,.@menu$ + jobname( .@roclass );
+		.@available++;
+	}
+	.@menu$ = .@menu$ + ":";
+}
+if( .@available ){	
+	mes "Select your desired job to disguise..";
+	.@i = select( .@menu$ ) - 1;
+	.@roclass = roclass( .@joblist[.@i] );
+	mes "Disguise into "+jobname( .@roclass )+" ?";
+	if( select( "Yes","Cancel" ) == 1 ){
+		changebase .@roclass;
+		@disguised = .@roclass;
+	}
+}else{
+	mes "You dont have any available class to disguise.";
+}
+close;
+
+OnPCLogoutEvent:
+if( @disguised ){
+	changebase Class;
+}
+end;
+}
