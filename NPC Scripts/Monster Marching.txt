@@ -1,0 +1,129 @@
+
+
+prontera,155,175,5	script	Sample	757,{
+if( getgmlevel() < 90 ) end;
+
+switch( select( "Set Mob Sprite",( !$@sprite || !$@speed )?"":"Start" ) ){
+	Case 1:
+		mes "Sprite List :";
+		do{
+			input $@sprite[.@size];
+			.@name$ = getmonsterinfo( $@sprite[.@size],MOB_NAME );
+			if( .@name$ != "null" ){
+				mes " ^777777> "+.@name$+"^000000";
+				.@size++;
+			}
+		}while( select( "Add Another Sprite","Continue" ) == 1 );
+		$@sprite_size = .@size;
+		mes "Speed : ";
+		input $@speed,100,500;
+
+	Case 2:
+		mes "NPC will start walk now.";
+		close2;
+		for( .@y = 0; .@y < .y_align_size; .@y++ )
+			for( .@x = 0; .@x < .x_align_size; .@x++ ){
+				hideoffnpc "mob#"+.@count;
+				movenpc "mob#"+.@count,.x_align[.@x],.y_align[.@y];
+				specialeffect 344,AREA,"mob#"+.@count;
+				.@count++;
+			}
+		donpcevent "::OnWalk";
+	default: break;
+}
+end;
+
+OnInit:
+// how many step they walk everytime
+$@walk_step = 2;
+// hide npc when reach this y-coordinate
+$@end_y_coordinate = 142;
+
+// npc alignment coordinate ( depend on duplicated mob npc )
+setarray .x_align,151,153,155,157,159,161;
+setarray .y_align,165,167,169,171,173;
+.x_align_size = getarraysize( .x_align );
+.y_align_size = getarraysize( .y_align );
+
+.npc_map$ = strnpcinfo(4);
+// flower align ...
+for( .@i = 170; .@i > 140; .@i-- ){
+	monster .npc_map$,148,.@i,"WALL",rand( 1934,1936 ),1,"";
+	monster .npc_map$,163,.@i,"WALL",rand( 1934,1936 ),1,"";
+}
+end;
+}
+
+
+
+prontera,1,1,4	script	mob	111,{
+	end;
+
+OnWalk:
+	.@npc_name$ = strnpcinfo(0);
+	npcspeed $@speed;
+	while( .@sprite < $@sprite_size && $@sprite[.@sprite] ){
+		if( !setnpcdisplay( .@npc_name$,$@sprite[.@sprite] ) ){
+			hideoffnpc .@npc_name$;
+			while( 1 ){
+				getmapxy( .@map$,.@x,.@y,1 );
+
+				if( .@y > $@end_y_coordinate ){
+					npcwalkto .@x,( .@y - $@walk_step );
+				}else if( .@y <= $@end_y_coordinate ){
+					npcstop;
+					break;
+				}
+				sleep 1750;
+			}
+			specialeffect 344;
+		}
+
+		.@sprite++;
+		if( .@sprite < $@sprite_size ){
+			movenpc .@npc_name$,.@x,169;
+			specialeffect 344,AREA,.@npc_name$;
+		}
+	}
+	movenpc .@npc_name$,1,1;
+	hideonnpc .@npc_name$;
+	setnpcdisplay( .@npc_name$,111 );
+	end;
+
+}
+
+// duplicate more if you need ..
+prontera,1,1,4	duplicate(mob)	mob#0	111
+prontera,1,1,4	duplicate(mob)	mob#1	111
+prontera,1,1,4	duplicate(mob)	mob#2	111
+prontera,1,1,4	duplicate(mob)	mob#3	111
+prontera,1,1,4	duplicate(mob)	mob#4	111
+prontera,1,1,4	duplicate(mob)	mob#5	111
+prontera,1,1,4	duplicate(mob)	mob#6	111
+prontera,1,1,4	duplicate(mob)	mob#7	111
+prontera,1,1,4	duplicate(mob)	mob#8	111
+prontera,1,1,4	duplicate(mob)	mob#9	111
+prontera,1,1,4	duplicate(mob)	mob#10	111
+prontera,1,1,4	duplicate(mob)	mob#11	111
+prontera,1,1,4	duplicate(mob)	mob#12	111
+prontera,1,1,4	duplicate(mob)	mob#13	111
+prontera,1,1,4	duplicate(mob)	mob#14	111
+prontera,1,1,4	duplicate(mob)	mob#15	111
+prontera,1,1,4	duplicate(mob)	mob#16	111
+prontera,1,1,4	duplicate(mob)	mob#17	111
+prontera,1,1,4	duplicate(mob)	mob#18	111
+prontera,1,1,4	duplicate(mob)	mob#19	111
+prontera,1,1,4	duplicate(mob)	mob#20	111
+prontera,1,1,4	duplicate(mob)	mob#21	111
+prontera,1,1,4	duplicate(mob)	mob#22	111
+prontera,1,1,4	duplicate(mob)	mob#23	111
+prontera,1,1,4	duplicate(mob)	mob#24	111
+prontera,1,1,4	duplicate(mob)	mob#25	111
+prontera,1,1,4	duplicate(mob)	mob#26	111
+prontera,1,1,4	duplicate(mob)	mob#27	111
+prontera,1,1,4	duplicate(mob)	mob#28	111
+prontera,1,1,4	duplicate(mob)	mob#29	111
+prontera,1,1,4	duplicate(mob)	mob#30	111
+                                    
+
+
