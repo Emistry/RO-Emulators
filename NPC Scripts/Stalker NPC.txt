@@ -1,5 +1,4 @@
 
-
 prontera,155,175,5	script	Stalker	757,{
 set .@skill_level,getskilllv( "RG_PLAGIARISM" );
 
@@ -42,7 +41,7 @@ if( !.@skill_level ){
 		}
 	}
 }
-dispbottom "Skill ID "+CLONE_SKILL+" | Level : "+CLONE_SKILL_LV;
+//dispbottom "Skill ID "+CLONE_SKILL+" | Level : "+CLONE_SKILL_LV;
 close;
 
 OnInit:
